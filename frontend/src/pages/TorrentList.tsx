@@ -1,10 +1,10 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useStore } from '../store'
 import { formatBytes, formatSpeed, formatEta, formatProgress, cn } from '../lib/utils'
 import {
-  Pause, Play, Trash2, Plus, ArrowUpDown,
+  Pause, Play, Trash2, Plus, ArrowUpDown, FileUp,
 } from 'lucide-react'
 
 const pageVariants = {
@@ -30,6 +30,7 @@ export default function TorrentList() {
   const [magnetInput, setMagnetInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const sorted = [...torrents]
     .filter((t) => t.name.toLowerCase().includes(filter.toLowerCase()))
@@ -54,6 +55,40 @@ export default function TorrentList() {
       setMagnetInput('')
       setShowAddModal(false)
     } catch {}
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const isTauri = typeof window !== 'undefined' && '__TAURI__' in window
+    if (isTauri) {
+      try {
+        const arrayBuffer = await file.arrayBuffer()
+        const bytes = new Uint8Array(arrayBuffer)
+        const tauri = (window as any).__TAURI__
+        await tauri.core.invoke('add_torrent_file_bytes', {
+          data: Array.from(bytes),
+          category: '',
+          tags: '',
+        })
+        setShowAddModal(false)
+      } catch (err) {
+        console.error('Failed to add torrent file:', err)
+      }
+    } else {
+      const reader = new FileReader()
+      reader.onload = async () => {
+        const base64 = reader.result as string
+        try {
+          await addTorrent(base64)
+          setShowAddModal(false)
+        } catch (err) {
+          console.error('Failed to add torrent file:', err)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -242,6 +277,22 @@ export default function TorrentList() {
               className="w-full h-24 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-accent-neon/50 resize-none"
               autoFocus
             />
+            <div className="flex items-center gap-2 mt-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".torrent"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-slate-300 hover:bg-white/10 transition"
+              >
+                <FileUp size={16} />
+                Browse .torrent file
+              </button>
+            </div>
             <div className="flex justify-end gap-2 mt-4">
               <button onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-lg text-sm text-slate-400 hover:text-slate-200">
                 Cancel

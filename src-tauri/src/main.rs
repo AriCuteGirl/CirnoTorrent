@@ -22,6 +22,30 @@ async fn add_torrent(
 }
 
 #[tauri::command]
+async fn add_torrent_file(
+    engine: State<'_, Arc<Engine>>,
+    file_path: String,
+    category: String,
+    tags: String,
+) -> Result<String, String> {
+    let data = std::fs::read(&file_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+    engine.torrent_mgr.add_torrent_from_bytes(data, &category, &tags).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn add_torrent_file_bytes(
+    engine: State<'_, Arc<Engine>>,
+    data: Vec<u8>,
+    category: String,
+    tags: String,
+) -> Result<String, String> {
+    engine.torrent_mgr.add_torrent_from_bytes(data, &category, &tags).await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 async fn get_torrents(engine: State<'_, Arc<Engine>>) -> Result<Vec<TorrentStatus>, String> {
     Ok(engine.torrent_mgr.get_all_torrent_statuses().await)
 }
@@ -206,7 +230,9 @@ async fn search_torrents(
     Ok(list)
 }
 
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+
     // Locate or create app local database file
     let app_dir = dirs::data_local_dir()
         .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")));
@@ -220,7 +246,7 @@ fn main() -> anyhow::Result<()> {
 
     // If Web UI setting is enabled, start the Axum HTTP server in the background
     let engine_for_server = engine.clone();
-    tokio::spawn(async move {
+    tauri::async_runtime::spawn(async move {
         if let Ok(settings) = engine_for_server.db.get_settings() {
             if settings.webui_enabled {
                 println!("Web UI enabled on port {} inside Desktop App", settings.webui_port);
@@ -241,7 +267,7 @@ fn main() -> anyhow::Result<()> {
         .setup(move |app| {
             let app_handle = app.handle().clone();
             // Start background thread that emits ticking updates to front-end window
-            tokio::spawn(async move {
+            tauri::async_runtime::spawn(async move {
                 let mut interval = tokio::time::interval(Duration::from_secs(1));
                 loop {
                     interval.tick().await;
@@ -269,6 +295,8 @@ fn main() -> anyhow::Result<()> {
         })
         .invoke_handler(tauri::generate_handler![
             add_torrent,
+            add_torrent_file,
+            add_torrent_file_bytes,
             get_torrents,
             pause_torrent,
             resume_torrent,

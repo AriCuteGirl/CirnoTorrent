@@ -82,6 +82,16 @@ impl TorrentManager {
         })
     }
 
+    pub async fn add_torrent_from_bytes(&self, data: Vec<u8>, category: &str, tags: &str) -> Result<String> {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+
+        let add_torrent = librqbit::AddTorrent::from_bytes(bytes::Bytes::from(data));
+        let response = self.session.add_torrent(add_torrent, None).await?;
+
+        self.register_torrent(response, id, now, "", category, tags).await
+    }
+
     pub async fn add_torrent(&self, magnet_or_url: &str, category: &str, tags: &str) -> Result<String> {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
@@ -89,6 +99,18 @@ impl TorrentManager {
         let add_torrent = librqbit::AddTorrent::from_url(magnet_or_url);
         let response = self.session.add_torrent(add_torrent, None).await?;
 
+        self.register_torrent(response, id, now, magnet_or_url, category, tags).await
+    }
+
+    async fn register_torrent(
+        &self,
+        response: librqbit::AddTorrentResponse,
+        id: String,
+        now: String,
+        magnet_uri: &str,
+        category: &str,
+        tags: &str,
+    ) -> Result<String> {
         let handle = response.into_handle()
             .ok_or_else(|| anyhow::anyhow!("torrent was not added (list-only or already managed)"))?;
 
@@ -110,7 +132,7 @@ impl TorrentManager {
             id: id.clone(),
             info_hash,
             name,
-            magnet_uri: magnet_or_url.to_string(),
+            magnet_uri: magnet_uri.to_string(),
             save_path: self.download_dir.to_string_lossy().to_string(),
             total_bytes,
             downloaded_bytes: 0,
