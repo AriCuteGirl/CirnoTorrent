@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Default Accent Color (Blue) */
+    --accent-color: #00e5ff;
+    --accent-glow: rgba(0, 229, 255, 0.35);
+    
+    /* Backgrounds & Text */
+    --color-bg-base: #f8fafc;
+    --color-bg-surface: rgba(255, 255, 255, 0.7);
+    --color-border: rgba(226, 232, 240, 0.8);
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #475569;
+  }
+
+  .dark {
+    /* Dark Mode Defaults */
+    --color-bg-base: #030712;
+    --color-bg-surface: rgba(17, 24, 39, 0.6);
+    --color-border: rgba(31, 41, 55, 0.5);
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #9ca3af;
+  }
+
+  body {
+    background-color: var(--color-bg-base);
+    color: var(--color-text-primary);
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.2);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.4);
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    background: var(--color-bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .text-accent-neon {
+    color: var(--accent-color);
+  }
+
+  .bg-accent-neon {
+    background-color: var(--accent-color);
+  }
+
+  .border-accent-neon {
+    border-color: var(--accent-color);
+  }
+
+  .shadow-accent-neon {
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+
+  .glow-border {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px var(--accent-glow), inset 0 0 10px var(--accent-glow);
+  }
+
+  /* Shimmer animation for torrent progress bars */
+  .shimmer-bar {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shimmer-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.5) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Custom styles for charts or extra styling */
+.chart-tooltip-glass {
+  background: rgba(17, 24, 39, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(8px) !important;
+  border-radius: 8px !important;
+  color: white !important;
+}

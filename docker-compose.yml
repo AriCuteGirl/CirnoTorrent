@@ -1,0 +1,20 @@
+services:
+  cirnotorrent:
+    build: .
+    container_name: cirnotorrent
+    restart: unless-stopped
+    ports:
+      - "${WEBUI_PORT:-8080}:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    volumes:
+      - ./data/downloads:/data/downloads
+      - ./data/config:/data/config
+      - ./data/watch:/data/watch
+    environment:
+      - WEBUI_PORT=${WEBUI_PORT:-8080}
+      - USERNAME=${USERNAME:-admin}
+      - PASSWORD=${PASSWORD:-}
+      - MAX_DOWN_SPEED=${MAX_DOWN_SPEED:-0}
+      - MAX_UP_SPEED=${MAX_UP_SPEED:-0}
+      - DOWNLOAD_PATH=${DOWNLOAD_PATH:-/data/downloads}
